@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCZ Store — Estamparia autoral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-black:#151417;
+    --charcoal:#211f24;
+    --charcoal-soft:#2a2730;
+    --canvas:#eae3d3;
+    --canvas-dim:#ddd4bd;
+    --text-light:#f4efe4;
+    --text-dim:#b9b2a4;
+    --magenta:#eeb702;
+    --magenta-dim:#a82a58;
+    --yellow:#f3b729;
+    --line: rgba(244,239,228,0.14);
+    --line-dark: rgba(21,20,23,0.14);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--canvas);
+    color:var(--ink-black);
+    font-family:'Archivo', sans-serif;
+    overflow-x:hidden;
+  }
+  img,svg{display:block; max-width:100%;}
+  a{color:inherit; text-decoration:none;}
+  ul{list-style:none;}
+  .tag{
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+  }
+  h1,h2,h3{
+    font-family:'Anton', sans-serif;
+    font-weight:400;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    line-height:0.95;
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 28px;
+  }
+  @media(max-width:640px){ .wrap{padding:0 20px;} }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+    html{scroll-behavior:auto;}
+  }
+
+  :focus-visible{
+    outline:3px solid var(--yellow);
+    outline-offset:3px;
+  }
+
+  /* ---------- registration mark (signature element) ---------- */
+  .regmark{
+    width:22px; height:22px;
+    position:relative;
+    flex-shrink:0;
+    opacity:0.85;
+  }
+  .regmark::before, .regmark::after{
+    content:'';
+    position:absolute;
+    background:currentColor;
+  }
+  .regmark::before{ /* vertical */
+    left:50%; top:0; width:1.5px; height:100%; transform:translateX(-50%);
+  }
+  .regmark::after{ /* horizontal */
+    top:50%; left:0; height:1.5px; width:100%; transform:translateY(-50%);
+  }
+  .regmark-circle{
+    position:absolute; inset:4px;
+    border:1.5px solid currentColor;
+    border-radius:50%;
+  }
+  .regmark.on-dark{ color:var(--text-light); }
+  .regmark.on-light{ color:var(--ink-black); }
+  .regmark.accent{ color:var(--magenta); }
+
+  .corner-marks{
+    position:absolute; inset:0; pointer-events:none; z-index:2;
+  }
+  .corner-marks .regmark{ position:absolute; }
+  .corner-marks .cm-tl{ top:18px; left:18px; }
+  .corner-marks .cm-tr{ top:18px; right:18px; }
+  .corner-marks .cm-bl{ bottom:18px; left:18px; }
+  .corner-marks .cm-br{ bottom:18px; right:18px; }
+  @media(max-width:640px){
+    .corner-marks .regmark{ width:16px; height:16px; }
+    .corner-marks .cm-tl,.corner-marks .cm-tr{ top:12px; }
+    .corner-marks .cm-bl,.corner-marks .cm-br{ bottom:12px; }
+    .corner-marks .cm-tl,.corner-marks .cm-bl{ left:12px; }
+    .corner-marks .cm-tr,.corner-marks .cm-br{ right:12px; }
+  }
+
+  /* ---------- halftone texture ---------- */
+  .halftone{
+    background-image: radial-gradient(circle, currentColor 1.4px, transparent 1.5px);
+    background-size: 12px 12px;
+  }
+
+  /* ---------- nav ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:var(--ink-black);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px;
+    max-width:1180px; margin:0 auto;
+  }
+  .logo{
+    font-family:'Anton', sans-serif;
+    font-size:22px;
+    color:var(--text-light);
+    letter-spacing:0.02em;
+    display:flex; align-items:center; gap:10px;
+  }
+  .logo .dot{ width:9px; height:9px; background:var(--magenta); border-radius:50%; }
+  .nav-links{ display:flex; gap:30px; align-items:center; }
+  .nav-links a{
+    color:var(--text-dim);
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    transition:color .2s;
+  }
+  .nav-links a:hover{ color:var(--text-light); }
+  .nav-cta{
+    background:var(--magenta);
+    color:var(--text-light) !important;
+    padding:10px 18px;
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    border-radius:2px;
+    transition:background .2s;
+  }
+  .nav-cta:hover{ background:var(--magenta-dim); }
+  .nav-toggle{ display:none; }
+  @media(max-width:760px){
+    .nav-links{ display:none; }
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;
+    background:var(--ink-black);
+    color:var(--text-light);
+    padding:100px 0 90px;
+    overflow:hidden;
+  }
+  .hero-halftone{
+    position:absolute;
+    top:-60px; right:-80px;
+    width:520px; height:520px;
+    color:var(--magenta);
+    opacity:0.5;
+    -webkit-mask-image: radial-gradient(circle, black 0%, black 35%, transparent 72%);
+    mask-image: radial-gradient(circle, black 0%, black 35%, transparent 72%);
+  }
+  .hero-inner{
+    position:relative; z-index:3;
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:50px;
+    align-items:center;
+  }
+  @media(max-width:900px){
+    .hero-inner{ grid-template-columns:1fr; }
+  }
+  .eyebrow{
+    display:flex; align-items:center; gap:10px;
+    color:var(--yellow);
+    margin-bottom:22px;
+  }
+  .eyebrow .rule{ width:34px; height:1.5px; background:var(--yellow); }
+  .hero h1{
+    font-size:clamp(42px, 6.4vw, 78px);
+    color:var(--text-light);
+  }
+  .hero h1 span{ color:var(--magenta); }
+  .hero p.lede{
+    margin-top:24px;
+    font-size:18px;
+    line-height:1.6;
+    color:var(--text-dim);
+    max-width:46ch;
+  }
+  .hero-ctas{
+    margin-top:36px;
+    display:flex; gap:16px; flex-wrap:wrap;
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding:15px 26px;
+    font-family:'Space Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    border-radius:2px;
+    transition:transform .18s ease, background .18s ease;
+    border:1.5px solid transparent;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn-primary{ background:var(--magenta); color:var(--text-light); }
+  .btn-primary:hover{ background:var(--magenta-dim); }
+  .btn-ghost{ border-color:var(--line); color:var(--text-light); }
+  .btn-ghost:hover{ border-color:var(--text-light); }
+
+  .hero-specs{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:44px;
+    display:flex; gap:26px; flex-wrap:wrap;
+  }
+  .hero-specs strong{ color:var(--text-light); display:block; font-size:20px; font-family:'Anton',sans-serif; }
+
+  /* hero shirt mock */
+  .shirt-stage{
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
+    min-height:340px;
+  }
+  .shirt-stage .regmark{ position:absolute; }
+  .shirt{ width:260px; }
+
+  /* ---------- section shell ---------- */
+  section{ position:relative; }
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    margin-bottom:52px;
+    flex-wrap:wrap;
+  }
+  .section-head .tag{ color:var(--magenta-dim); margin-bottom:12px; display:block; }
+  .section-head h2{ font-size:clamp(30px,4vw,46px); }
+  .section-head p{ max-width:38ch; color:#5c574c; font-size:15px; line-height:1.6; }
+
+  /* ---------- processo ---------- */
+  .processo{ background:var(--canvas); padding:100px 0; position:relative; }
+  .steps{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--line-dark);
+    border:1px solid var(--line-dark);
+  }
+  @media(max-width:860px){ .steps{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:520px){ .steps{ grid-template-columns:1fr; } }
+  .step{
+    background:var(--canvas);
+    padding:34px 26px 30px;
+  }
+  .step .code{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--magenta);
+    letter-spacing:0.08em;
+  }
+  .step h3{
+    font-size:22px;
+    margin:16px 0 10px;
+    font-family:'Archivo',sans-serif;
+    font-weight:800;
+    text-transform:none;
+  }
+  .step p{ font-size:14px; line-height:1.6; color:#5c574c; }
+
+  /* ---------- serviços ---------- */
+  .servicos{ background:var(--ink-black); color:var(--text-light); padding:100px 0; }
+  .servicos .section-head p{ color:var(--text-dim); }
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:18px;
+  }
+  @media(max-width:940px){ .cards{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:560px){ .cards{ grid-template-columns:1fr; } }
+  .card{
+    background:var(--charcoal);
+    border:1px solid var(--line);
+    padding:26px 22px;
+    transition:border-color .2s, background .2s;
+  }
+  .card:hover{ border-color:var(--magenta); background:var(--charcoal-soft); }
+  .swatch{ width:30px; height:30px; border-radius:50%; margin-bottom:20px; }
+  .card h3{ font-family:'Archivo',sans-serif; font-weight:700; font-size:17px; text-transform:none; margin-bottom:8px; }
+  .card p{ font-size:13.5px; color:var(--text-dim); line-height:1.6; }
+
+  /* ---------- galeria ---------- */
+  .galeria{ background:var(--canvas); padding:100px 0; }
+  .gal-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+  }
+  @media(max-width:900px){ .gal-grid{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .gal-grid{ grid-template-columns:1fr; } }
+  .gal-item{
+    background:var(--ink-black);
+    aspect-ratio:3/4;
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .gal-item .shirt{ width:70%; }
+  .gal-label{
+    position:absolute; left:12px; bottom:12px;
+    font-family:'Space Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-dim);
+    letter-spacing:0.06em;
+  }
+
+  /* ---------- depoimentos ---------- */
+  .depoimentos{ background:var(--canvas-dim); padding:100px 0; }
+  .dep-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+  }
+  @media(max-width:860px){ .dep-grid{ grid-template-columns:1fr; } }
+  .dep-card{
+    background:var(--canvas);
+    padding:30px 26px;
+    border-top:3px solid var(--magenta);
+  }
+  .dep-card p.quote{
+    font-size:15.5px;
+    line-height:1.65;
+    color:#312e28;
+    margin-bottom:22px;
+  }
+  .dep-who{ display:flex; align-items:center; gap:12px; }
+  .dep-avatar{
+    width:38px; height:38px; border-radius:50%;
+    background:var(--ink-black);
+    color:var(--text-light);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Anton',sans-serif; font-size:15px;
+  }
+  .dep-who .name{ font-weight:700; font-size:13.5px; }
+  .dep-who .role{ font-family:'Space Mono',monospace; font-size:11px; color:#7a7364; }
+
+  /* ---------- cta final ---------- */
+  .cta-final{
+    position:relative;
+    background:var(--magenta);
+    color:var(--text-light);
+    padding:110px 0;
+    text-align:center;
+    overflow:hidden;
+  }
+  .cta-final .halftone-bg{
+    position:absolute; inset:0;
+    color:var(--ink-black);
+    opacity:0.12;
+  }
+  .cta-final h2{
+    position:relative; z-index:2;
+    font-size:clamp(34px,6vw,64px);
+    max-width:16ch; margin:0 auto 22px;
+  }
+  .cta-final p{
+    position:relative; z-index:2;
+    font-size:16px; max-width:44ch; margin:0 auto 36px; opacity:0.92;
+  }
+  .cta-final .btn-primary{ background:var(--ink-black); position:relative; z-index:2;}
+  .cta-final .btn-primary:hover{ background:#000; }
+
+  /* ---------- footer ---------- */
+  footer{
+    background:var(--ink-black);
+    color:var(--text-dim);
+    padding:60px 0 30px;
+  }
+  .foot-grid{
+    display:grid;
+    grid-template-columns:1.3fr 1fr 1fr;
+    gap:40px;
+    padding-bottom:40px;
+    border-bottom:1px solid var(--line);
+  }
+  @media(max-width:700px){ .foot-grid{ grid-template-columns:1fr; gap:30px; } }
+  .foot-grid h4{
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-light);
+    margin-bottom:16px;
+  }
+  .foot-grid ul li{ margin-bottom:10px; font-size:14px; }
+  .foot-grid ul a:hover{ color:var(--text-light); }
+  .foot-bottom{
+    display:flex; justify-content:space-between; align-items:center;
+    padding-top:26px; font-size:12px; flex-wrap:wrap; gap:12px;
+  }
+  .foot-logo{ font-family:'Anton',sans-serif; color:var(--text-light); font-size:18px; }
+
+  .reveal{
+    opacity:0; transform:translateY(18px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+  
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav wrap">
+    <div class="logo"><span class="dot"></span>MCZ STORE</div>
+    <nav class="nav-links">
+      <a href="#processo">Como funciona</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#galeria">Galeria</a>
+      <a href="#depoimentos">Depoimentos</a>
+    </nav>
+    <a class="nav-cta" href="https://wa.me/5582988594234" target="_blank" rel="noopener">Fazer orçamento</a>
+  </div>
+</header>
+
+<section class="hero">
+  
+  <div class="corner-marks">
+  
+  </div>
+  <div class="wrap hero-inner">
+    <div>
+      <div class="eyebrow tag"><span class="rule"></span>Estamparia autoral · Maceió, AL</div>
+      <h1>Sua arte vira<br>camiseta <span>de verdade</span></h1>
+      <p class="lede">A MCZ Store estampa ideias em tecido: DTF e sublimação para quem quer levar a própria marca, o próprio time ou a própria arte para o corpo sem mínimo assustador e sem enrolação.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="https://wa.me/5582988594234" target="_blank" rel="noopener">Pedir orçamento no WhatsApp</a>
+        <a class="btn btn-ghost" href="#galeria">Ver estampas prontas</a>
+      </div>
+      <div class="hero-specs">
+        <div><strong>+1.200</strong>peças estampadas</div>
+        <div><strong>3</strong>técnicas de impressão</div>
+        <div><strong>72h</strong>prazo médio de entrega</div>
+      </div>
+    </div>
+    <div class="shirt-stage">
+      
+      <svg class="shirt" viewBox="0 0 260 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M70 20 L20 55 L45 95 L70 78 L70 280 L190 280 L190 78 L215 95 L240 55 L190 20 C190 40 165 55 130 55 C95 55 70 40 70 20 Z" fill="#211f24" stroke="#3a3742" stroke-width="1.5"/>
+        <circle cx="130" cy="160" r="46" fill="none" stroke="#e63875" stroke-width="1.5"/>
+        <circle cx="130" cy="160" r="30" fill="#e63875" opacity="0.85"/>
+        <circle cx="130" cy="160" r="14" fill="#f3b729"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="processo" id="processo">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Do arquivo à arara</span>
+        <h2>Como funciona</h2>
+      </div>
+      <p>Quatro etapas, do jeito que qualquer estamparia séria trabalha sem pular nenhuma.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="code">01 / ARTE</div>
+        <h3>Você envia a ideia</h3>
+        <p>Manda a arte pronta ou descreve o que quer a gente ajusta cores, tamanho e posicionamento para impressão.</p>
+      </div>
+      <div class="step reveal">
+        <div class="code">02 / TÉCNICA</div>
+        <h3>Escolhemos o processo</h3>
+        <p>DTF para detalhes e cores ilimitadas, sublimação para tecido 100% poliéster.</p>
+      </div>
+      <div class="step reveal">
+        <div class="code">03 / PROVA</div>
+        <h3>Você aprova a prova</h3>
+        <p>Enviamos uma simulação da peça final antes de qualquer impressão. Nada roda sem seu ok.</p>
+      </div>
+      <div class="step reveal">
+        <div class="code">04 / ENTREGA</div>
+        <h3>Retirada ou envio</h3>
+        <p>Retire na loja em Maceió ou receba em casa com rastreio, em até 72h após a aprovação.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="servicos" id="servicos">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag" style="color:var(--yellow);">O que sai da nossa mesa</span>
+        <h2>Serviços</h2>
+      </div>
+      <p>Cada linha tem uma técnica ideal  a gente indica qual encaixa no seu projeto.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal">
+        <div class="swatch" style="background:var(--magenta);"></div>
+        <h3>Camisetas personalizadas</h3>
+        <p>Peça única ou lote fechado, em silk ou DTF, com corte e malha à sua escolha.</p>
+      </div>
+      <div class="card reveal">
+        <div class="swatch" style="background:var(--yellow);"></div>
+        <h3>Uniformes e times</h3>
+        <p>Empresas, igrejas, times de várzea e formaturas numeração e nomes inclusos.</p>
+      </div>
+      <div class="card reveal">
+        <div class="swatch" style="background:#4f8ff0;"></div>
+        <h3>Moletons e oversized</h3>
+        <p>Estampa em algodão pesado, com acabamento resistente a lavagem.</p>
+      </div>
+      <div class="card reveal">
+        <div class="swatch" style="background:#3fb37f;"></div>
+        <h3>Bonés e acessórios</h3>
+        <p>Bordado ou silk em boné, ecobag e touca  combine com sua camiseta.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="galeria" id="galeria">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Papel de parede não, tecido</span>
+        <h2>Do que já saiu daqui</h2>
+      </div>
+      <p>Uma amostra das cores e estampas que já passaram pela nossa mesa de silk.</p>
+    </div>
+    <div class="gal-grid">
+      <div class="gal-item reveal">   
+      <img src="imagem 1.jpeg" alt="Notebook" width="500">
+        <div class="gal-label">SILK · 1 COR</div>
+      </div>
+      <div class="gal-item reveal">
+        <svg class="shirt" viewBox="0 0 260 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+           <img src="imagem 2.jpeg" alt="Notebook" width="500">
+          </svg>
+        <div class="gal-label">DTF · FULL COLOR</div>
+      </div>
+      <div class="gal-item reveal">
+        <svg class="shirt" viewBox="0 0 260 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <img src="imagem 3.jpeg" alt="Notebook" width="500">
+        </svg>
+        <div class="gal-label">SUBLIMAÇÃO</div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="depoimentos" id="depoimentos">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag" style="color:var(--magenta-dim);">Quem já vestiu</span>
+        <h2>Depoimentos</h2>
+      </div>
+    </div>
+    <div class="dep-grid">
+      <div class="dep-card reveal">
+        <p class="quote">"Fechei o uniforme do time em três dias e a estampa não saiu nem depois de várias lavagens."</p>
+        <div class="dep-who">
+          <div class="dep-avatar">R</div>
+          <div><div class="name">Renato Souza</div><div class="role">Várzea FC</div></div>
+        </div>
+      </div>
+      <div class="dep-card reveal">
+        <p class="quote">"Mandei uma arte complicada e a prova ficou idêntica ao que eu imaginei. Sem retrabalho."</p>
+        <div class="dep-who">
+          <div class="dep-avatar">C</div>
+          <div><div class="name">Camila Torres</div><div class="role">Loja autoral</div></div>
+        </div>
+      </div>
+      <div class="dep-card reveal">
+        <p class="quote">"Encomendei camisas de formatura para 40 pessoas e todas chegaram no prazo combinado."</p>
+        <div class="dep-who">
+          <div class="dep-avatar">J</div>
+          <div><div class="name">João Pedro Lima</div><div class="role">Comissão de formatura</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <svg class="halftone-bg halftone" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="wrap">
+    <h2>Bora estampar sua ideia?</h2>
+    <p>Manda a arte, escolhe a peça e recebe a prova ainda hoje. É só chamar no WhatsApp.</p>
+    <a class="btn btn-primary" href="https://wa.me/5582988594234" target="_blank" rel="noopener">Chamar no WhatsApp</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-logo" style="margin-bottom:14px;">MCZ STORE</div>
+        <p style="font-size:13.5px; line-height:1.7; max-width:34ch;">Estamparia de camisetas em Maceió — DTF e sublimação para peça única ou lote fechado.</p>
+      </div>
+      <div>
+        <h4>Navegação</h4>
+        <ul>
+          <li><a href="#processo">Como funciona</a></li>
+          <li><a href="#servicos">Serviços</a></li>
+          <li><a href="#galeria">Galeria</a></li>
+          <li><a href="#depoimentos">Depoimentos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="https://wa.me/5582000000000" target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="#">Instagram @mczstore</a></li>
+          <li>Maceió, Alagoas</li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 MCZ Store. Todos os direitos reservados.</span>
+      <span class="tag" style="display:flex; align-items:center; gap:8px;">
+        <span class="regmark on-dark" style="width:14px;height:14px;"><span class="regmark-circle"></span></span>
+        REG. 01 — DTF / SUBLIMAÇÃO
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold:0.15 });
+  document.querySelectorAll('.reveal').forEach(el=> io.observe(el));
+</script>
+
+</body>
+</html>
